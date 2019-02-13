@@ -1,5 +1,13 @@
 class FilterNode {
   //FilterTree object - for category filters
+  static findFilterInList(filterList, filterName) {
+    for (let filter of filterList) {
+      if (filter.title == filterName) {
+        return filter;
+      }
+    }
+    return null;
+  }
   constructor({ title, heTitle, docCount, aggKey, aggType, children, parent, selected } = {}) {
       this.title = title;
       this.heTitle = heTitle;
@@ -8,7 +16,7 @@ class FilterNode {
       this.aggType = aggType;
       this.children = typeof children === 'undefined' ? [] :
         children.map(c => {
-          const ret = c instanceof FilterNode ? c : new FilterNode(c);
+          let ret = c instanceof FilterNode ? c.clone() : new FilterNode(c);
           ret.parent = this;
           return ret;
         }
@@ -138,7 +146,7 @@ class FilterNode {
       return results;
   }
   clone() {
-    const cloned = new FilterNode({ ...this });
+    const cloned = new FilterNode({ title: this.title, heTitle: this.heTitle, docCount: this.docCount, aggKey: this.aggKey, aggType: this.aggType, selected: this.selected });
     const children = this.children.map( c => {
       const cloned_child = c.clone();
       cloned_child.parent = cloned;
@@ -149,4 +157,4 @@ class FilterNode {
   }
 }
 
-export default FilterNode;
+module.exports = FilterNode;

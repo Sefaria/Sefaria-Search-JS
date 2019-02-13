@@ -1,10 +1,14 @@
-const $ = require('./sefariaJquery');
-const extend            = require('extend');
+try {
+  require('whatwg-fetch');
+} catch (e) {
+  // likely this isn't a browser environment
+}
 const FilterNode = require('./FilterNode');
 const SearchState = require('./searchState');
 
 class Search {
-    constructor(searchIndexText, searchIndexSheet) {
+    constructor(apiHost, searchIndexText, searchIndexSheet) {
+      this.apiHost = apiHost;
       this.searchIndexText = searchIndexText;
       this.searchIndexSheet = searchIndexSheet;
       this._cache = {}
@@ -40,19 +44,30 @@ class Search {
             args.success(cache_result);
             return null;
         }
-        return $.ajax({
-            url: `${Sefaria.apiHost}/api/search-wrapper`,
-            type: 'POST',
-            data: req,
-            contentType: "application/json; charset=utf-8",
-            crossDomain: true,
-            processData: false,
-            dataType: 'json',
-            success: function(data) {
+        return fetch(`${this.apiHost}/api/search-wrapper`, {
+            method: 'POST',
+            body: req,
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json; charset=utf-8',
+            },
+            success: data => {
                 this.cache(req, data);
                 args.success(data);
-            }.bind(this),
+            },
             error: args.error
+        }).then(response => {
+          if (response.status >= 200 && response.status < 300) {
+            return response;
+          } else {
+            const error = new Error(response + response.statusText);
+            error.response = response;
+            throw error;
+          }
+        }).then(response => response.json())
+        .then(json => {
+          this.cache(req, json);
+          return json;
         });
     }
     get_query_object({
@@ -110,7 +125,7 @@ class Search {
       });
       return newHits;
     }
-    buildFilterTree(aggregation_buckets, appliedFilters) {
+    buildFilterTree(aggregation_buckets, appliedFilters, Sefaria) {
       //returns object w/ keys 'availableFilters', 'registry'
       //Add already applied filters w/ empty doc count?
       var rawTree = {};
@@ -123,7 +138,7 @@ class Search {
           f => this._addAvailableFilter(rawTree, f["key"], {"docCount":f["doc_count"]})
       );
       this._aggregate(rawTree);
-      return this._build(rawTree);
+      return this._build(rawTree, Sefaria);
     }
     _addAvailableFilter(rawTree, key, data) {
       //key is a '/' separated key list, data is an arbitrary object
@@ -156,7 +171,9 @@ class Search {
       function walker(key, branch) {
           if (branch !== null && typeof branch === "object") {
               // Recurse into children
-              $.each(branch, walker);
+              Object.keys(branch).forEach(key => {
+                walker(key, branch[key]);
+              });
               // Do the summation with a hacked object 'reduce'
               if ((!("docCount" in branch)) || (branch["docCount"] === 0)) {
                   branch["docCount"] = Object.keys(branch).reduce(function (previous, key) {
@@ -170,7 +187,7 @@ class Search {
       }
     }
 
-    _build(rawTree) {
+    _build(rawTree, Sefaria) {
       //returns dict w/ keys 'availableFilters', 'registry'
       //Aggregate counts, then sort rawTree into filter objects and add Hebrew using Sefaria.toc as reference
       //Nod to http://stackoverflow.com/a/17546800/213042
@@ -182,7 +199,7 @@ class Search {
 
 
       for(var j = 0; j < Sefaria.search_toc.length; j++) {
-          var b = walk.call(this, Sefaria.search_toc[j]);
+          var b = walk(Sefaria.search_toc[j]);
           if (b) filters.push(b);
 
           // Remove after commentary refactor ?
@@ -194,7 +211,7 @@ class Search {
             var docCount = 0;
             if (rawTree.Commentary && rawTree.Commentary[cat]) { docCount += rawTree.Commentary[cat].docCount; }
             if (rawTree.Commentary2 && rawTree.Commentary2[cat]) { docCount += rawTree.Commentary2[cat].docCount; }
-            extend(commentaryNode, {
+            commentaryNode = Object.assign(commentaryNode, {
                 "title": cat + " Commentary",
                 "aggKey": "Commentary/" + cat,
                 "heTitle": "מפרשי" + " " + toc_branch["heCategory"],
@@ -208,7 +225,7 @@ class Search {
 
       return { availableFilters: filters, registry };
 
-      function walk(branch, parentNode) {
+      function walk(branch) {
           var node = new FilterNode();
 
           node["docCount"] = 0;
@@ -216,20 +233,20 @@ class Search {
           if("category" in branch) { // Category node
 
             path.push(branch["category"]);  // Place this category at the *end* of the path
-            extend(node, {
+            node = Object.assign(node, {
               "title": path.slice(-1)[0],
               "aggKey": path.join("/"),
               "heTitle": branch["heCategory"]
             });
 
             for(var j = 0; j < branch["contents"].length; j++) {
-                var b = walk.call(this, branch["contents"][j], node);
+                const b = walk(branch["contents"][j]);
                 if (b) node.append(b);
             }
           }
           else if ("title" in branch) { // Text Node
               path.push(branch["title"]);
-              extend(node, {
+              node = Object.assign(node, {
                  "title": path.slice(-1)[0],
                  "aggKey": path.join("/"),
                  "heTitle": branch["heTitle"]
@@ -282,13 +299,13 @@ class Search {
       };
     }
 
-    buildAndApplyTextFilters(aggregation_buckets, appliedFilters, appliedFilterAggTypes, aggType) {
-      const { availableFilters, registry } = this.buildFilterTree(aggregation_buckets, appliedFilters);
+    buildAndApplyTextFilters(aggregation_buckets, appliedFilters, appliedFilterAggTypes, aggType, Sefaria) {
+      const { availableFilters, registry } = this.buildFilterTree(aggregation_buckets, appliedFilters, Sefaria);
       const orphans = this.applyFilters(registry, appliedFilters);
       return { availableFilters, registry, orphans };
     }
 
-    buildAndApplySheetFilters(aggregation_buckets, appliedFilters, appliedFilterAggTypes, aggType) {
+    buildAndApplySheetFilters(aggregation_buckets, appliedFilters, appliedFilterAggTypes, aggType, Sefaria) {
       const availableFilters = aggregation_buckets.map( b => {
         const isHeb = Sefaria.hebrew.isHebrew(b.key);
         const enTitle = isHeb ? '' : b.key;

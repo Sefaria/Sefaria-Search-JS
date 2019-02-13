@@ -1,4 +1,3 @@
-const Util = require('./util');
 const FilterNode = require('./FilterNode');
 
 class SearchState {
@@ -42,8 +41,8 @@ class SearchState {
 
   clone(trimFilters) {
     return new SearchState({
-      appliedFilters:   Util.clone(this.appliedFilters),
-      appliedFilterAggTypes: Util.clone(this.appliedFilterAggTypes),
+      appliedFilters:   [...this.appliedFilters],
+      appliedFilterAggTypes: [...this.appliedFilterAggTypes],
       availableFilters: trimFilters ? [] : this.availableFilters,
       filterRegistry:   trimFilters ? {} : this.filterRegistry,
       filtersValid:     trimFilters ? false : this.filtersValid,
@@ -129,7 +128,7 @@ class SearchState {
     //         oneOf({'t': 'text', 's': sheet, 'g': group, 'u': user})
     const aggTypes = SearchState.metadataByType[this.type].aggregation_field_array;
     const url = aggTypes.reduce( (accum, aggType) => {
-        const aggTypeFilters = aggTypes.length > 1 ? Util.zip(this.appliedFilters, this.appliedFilterAggTypes).filter( f => f[1] === aggType).map( x => x[0]) : this.appliedFilters;
+        const aggTypeFilters = aggTypes.length > 1 ? this.appliedFilters.filter((f, i) => this.appliedFilterAggTypes[i] === aggType) : this.appliedFilters;
         return accum + (aggTypeFilters.length > 0 ? `&${prefix}${aggType}Filters=${aggTypeFilters.map( f => encodeURIComponent(f)).join('|')}` : '');
       }, '') +
       `&${prefix}var=` + (this.field !== this.fieldExact ? '1' : '0') +
