@@ -13,6 +13,12 @@ class SearchState {
     fieldBroad,
     field,
     sortType,
+    isLoadingTail,
+    isLoading,
+    results,
+    numResults,
+    initScrollPos,
+    currPage,
   } = {}) {
     this.type             = type;  // always required
     this.appliedFilters   = appliedFilters   || [];
@@ -25,6 +31,12 @@ class SearchState {
     this.fieldBroad       = fieldBroad       || SearchState.metadataByType[type].fieldBroad;
     this.field            = field            || SearchState.metadataByType[type].field;
     this.sortType         = sortType         || SearchState.metadataByType[type].sortType;
+    this.isLoadingTail    = isLoadingTail    || false;
+    this.isLoading        = isLoading        || false;
+    this.results          = results          || [];
+    this.numResults       = numResults       || 0;
+    this.initScrollPos    = initScrollPos    || 0;
+    this.currPage         = currPage         || 0;
   }
 
   _recreateRegistry(filters) {
@@ -52,6 +64,12 @@ class SearchState {
       fieldBroad:       this.fieldBroad,
       field:            this.field,
       sortType:         this.sortType,
+      isLoadingTail:    this.isLoadingTail,
+      isLoading:        this.isLoading,
+      results:          [...this.results],
+      numResults:       this.numResults,
+      initScrollPos:    this.initScrollPos,
+      currPage:         this.currPage,
     });
   }
 
@@ -68,6 +86,12 @@ class SearchState {
     field,
     sortType,
     aggregationsToUpdate,
+    isLoadingTail,
+    isLoading,
+    results,
+    numResults,
+    initScrollPos,
+    currPage,
   }) {
     type             = typeof type             === 'undefined' ? this.type             : type;
     appliedFilters   = typeof appliedFilters   === 'undefined' ? this.appliedFilters   : appliedFilters;
@@ -78,6 +102,12 @@ class SearchState {
     fieldBroad       = typeof fieldBroad       === 'undefined' ? this.fieldBroad       : fieldBroad;
     field            = typeof field            === 'undefined' ? this.field            : field;
     sortType         = typeof sortType         === 'undefined' ? this.sortType         : sortType;
+    isLoadingTail    = typeof isLoadingTail    === 'undefined' ? this.isLoadingTail    : isLoadingTail;
+    isLoading        = typeof isLoading        === 'undefined' ? this.isLoading        : isLoading;
+    results          = typeof results          === 'undefined' ? this.results          : results;
+    numResults       = typeof numResults       === 'undefined' ? this.numResults       : numResults;
+    initScrollPos    = typeof initScrollPos    === 'undefined' ? this.initScrollPos    : initScrollPos;
+    currPage         = typeof currPage         === 'undefined' ? this.currPage         : currPage;
     const tempAvailableFilters = availableFilters;
     const tempFilterRegistry   = typeof filterRegistry   === 'undefined' ? this.filterRegistry   : filterRegistry;
     if (!!aggregationsToUpdate && this.filtersValid) {
@@ -101,6 +131,12 @@ class SearchState {
       fieldBroad,
       field,
       sortType,
+      isLoadingTail,
+      isLoading,
+      results,
+      numResults,
+      initScrollPos,
+      currPage,
     });
   }
 

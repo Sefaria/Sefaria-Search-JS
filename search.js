@@ -41,8 +41,7 @@ class Search {
         var req = JSON.stringify(this.get_query_object(args));
         var cache_result = this.cache(req);
         if (cache_result) {
-            args.success(cache_result);
-            return null;
+            return Promise.resolve(cache_result);
         }
         return fetch(`${this.apiHost}/api/search-wrapper`, {
             method: 'POST',
@@ -51,11 +50,6 @@ class Search {
               'Accept': 'application/json',
               'Content-Type': 'application/json; charset=utf-8',
             },
-            success: data => {
-                this.cache(req, data);
-                args.success(data);
-            },
-            error: args.error
         }).then(response => {
           if (response.status >= 200 && response.status < 300) {
             return response;
