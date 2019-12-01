@@ -94,3 +94,33 @@ only parameter required is `type`
 `metadataByType`
 
 object with default values for `SearchState` depending on the query type (either `text` or `sheet`)
+
+## Running Code While Developing
+This module is not part of a stand alone app. As such, it is helpful to be able for the apps to account for changes made in this repo without having to push to npm every time a change is made.
+
+### Web
+For web, `npm link` can be used. From within the `Sefaria-Search-JS` folder, run `npm link` (might require `sudo`). Then, from within `Sefaria-Project`, run `npm link @sefaria/search`.  
+*As of this writing, Sefaria-Project does not load search.js as an npm module. The code is duplicated within Sefaria-Project, and ideally this will change in the near future.*
+
+### Apps
+Unfortunately, the metro server we use does not currently support symlinking (see issues and PR below):
+https://github.com/facebook/metro/issues/286  
+https://github.com/facebook/metro/issues/1  
+https://github.com/facebook/metro/pull/257
+
+Currently, the options we found are to either push each change to npm and install, or to bundle the package as a `.tgz` and install. 
+
+To package:  
+From within the `Sefaria-Search-JS` directory:
+
+```
+npm pack
+cp sefaria-search-<version>.tgz ~
+cd <path-to-app-directory>
+npm install ~/sefaria-search<version>.tgz
+```
+
+Unfortunately, I've found that the metro server will cache the package and may not reflect the changes without restarting and dumping cache. To do this, restart the metro server with:
+`react-native start --resetCache`
+
+Dumping the cache can be a bit expensive. It might be worthwhile to just push changes to npm...
