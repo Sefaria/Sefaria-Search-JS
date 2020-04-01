@@ -1,6 +1,6 @@
 {
   "name": "@sefaria/search",
-  "version": "0.9.5",
+  "version": "0.9.7",
   "description": "repo for querying and processing queries to the Sefaria search API",
   "main": "index.js",
   "scripts": {
