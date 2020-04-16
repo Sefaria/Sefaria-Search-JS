@@ -36,7 +36,7 @@ class Search {
          error: callback on error
          */
         if (!args.query) {
-            return;
+            return Promise.reject('NO_QUERY');
         }
         var req = JSON.stringify(this.get_query_object(args));
         var cache_result = this.cache(req);
