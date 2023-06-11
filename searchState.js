@@ -39,14 +39,10 @@ class SearchState {
     this.currPage         = currPage         || 0;
   }
 
-  _recreateRegistry(filters) {
-    let registry = {};
+  _recreateRegistry(filters, registry = {}) {
     for (let f of filters) {
-      registry = {
-        ...registry,
-        [f.aggKey]: f,
-        ...this._recreateRegistry(f.children),
-      };
+      registry[f.aggKey] = f;
+      registry = this._recreateRegistry(f.children, registry);
     }
     return registry;
   }
