@@ -7,10 +7,13 @@ const FilterNode = require('./FilterNode');
 const SearchState = require('./searchState');
 
 class Search {
-    constructor(apiHost, searchIndexText, searchIndexSheet) {
+    constructor(apiHost, searchIndexText, searchIndexSheet, extraHeaders = {}) {
       this.apiHost = apiHost;
       this.searchIndexText = searchIndexText;
       this.searchIndexSheet = searchIndexSheet;
+      // Optional headers merged into every search-wrapper request (e.g. a User-Agent
+      // so Sefaria's own clients can self-identify). Caller values win over defaults.
+      this.extraHeaders = extraHeaders || {};
       this._cache = {}
     }
     cache(key, result) {
@@ -49,6 +52,7 @@ class Search {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json; charset=utf-8',
+              ...this.extraHeaders,
             },
         }).then(response => {
           if (response.status >= 200 && response.status < 300) {

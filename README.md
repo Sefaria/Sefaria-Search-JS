@@ -29,7 +29,7 @@ import { Search } from '@sefaria/search';
 `constructor`
 
 ```js
-(apiHost, searchIndexText, searchIndexSheet) => null
+(apiHost, searchIndexText, searchIndexSheet, extraHeaders = {}) => null
 ```
 
 - `apiHost`: the Sefaria server you want to point your API requests to. Usually, this will be `https://www.sefaria.org`
@@ -37,6 +37,8 @@ import { Search } from '@sefaria/search';
 - `searchIndexText`: the index for texts in your Elasticsearch database. Usually, this will be `text`
 
 - `searchIndexSheet`: the index for source sheets in your Elasticsearch database. Usually, this will be `sheet`
+
+- `extraHeaders` (optional): object of extra HTTP headers merged into every search request, e.g. `{ 'User-Agent': 'Sefaria/mobile-ios/8.0.0 (+https://github.com/Sefaria/Sefaria-Mobile)' }` so Sefaria's own clients can self-identify. Caller headers win over the defaults (`Accept`, `Content-Type`)
 
 ---
 
